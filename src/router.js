@@ -3,6 +3,8 @@ import Router from 'vue-router'
 import Home from './views/Home.vue'
 import CheckIn from './views/CheckIn.vue'
 import AddUser from './views/AddUser.vue'
+import AllUsers from './views/AllUsers.vue'
+import UserDashboard from './views/UserDashboard.vue'
 
 Vue.use(Router)
 
@@ -30,6 +32,16 @@ export default new Router({
       path: '/adduser',
       name: 'adduser',
       component: AddUser
+    },
+    {
+      path: '/allusers',
+      name: 'allusers',
+      component: AllUsers
+    },
+    {
+      path: '/user/:id',
+      name: 'userdashboard',
+      component: UserDashboard
     }
   ]
 })

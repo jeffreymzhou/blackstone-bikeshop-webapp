@@ -17,6 +17,13 @@
       required
       placeholder="Enter last name"
     ></b-form-input>
+    <b-form-input
+      id="input-1"
+      v-model="user.id"
+      type="email"
+      required
+      placeholder="Enter ID"
+    ></b-form-input>
       <button class="btn btn-primary" @click="addUser">
         Add User
       </button>
@@ -29,7 +36,8 @@ export default {
     return{
       user: {
         firstName: null,
-        lastName: null
+        lastName: null,
+        id: null
       }      
     }     
   },
@@ -38,6 +46,7 @@ export default {
       db.collection("users").add({
         firstName: this.user.firstName,
         lastName: this.user.lastName,
+        id: this.user.id,
         dateAdded: new Date()
       })
       .then(function(docRef) {
