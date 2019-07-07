@@ -5,7 +5,8 @@
       <router-link to="/about">About</router-link> |
       <router-link to="/checkin">Check In</router-link> |
       <router-link to="/adduser">Add User</router-link> |
-      <router-link to="/allusers">All Users</router-link>
+      <router-link to="/allusers">All Users</router-link> |
+      <router-link to="/admin">Admin Panel</router-link>
     </div>
     <router-view/>
   </div>

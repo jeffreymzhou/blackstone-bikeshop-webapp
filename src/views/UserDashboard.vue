@@ -1,6 +1,6 @@
 <template>
-  <div class="container">
-    <div class=row>
+  <div class="container" style="padding-bottom: 20px;">
+    <div class="row">
       <b-jumbotron class="container-fluid">
         <h2>
           User Dashboard: {{ currentUser.firstName }} {{ currentUser.lastName }}
@@ -49,7 +49,6 @@
                 >
                 </b-form-input>
               </b-form-group>
-
               <b-form-group
                 label-cols-sm="4"
                 label="Bike Ride:"
@@ -100,38 +99,39 @@
           WorkLog
         </h3>
         <div class="row mt-3">
-          <b-form-group class="col-md-5">
+          <b-form-group class="col-md-6">
             <b-form-select v-model="worklogFilter.type" :options="worklogTypeOptions" size="sm"></b-form-select>
           </b-form-group>
-          <b-form-group class="col-md-5">
+          <b-form-group class="col-md-6">
             <b-form-select v-model="worklogFilter.timeFrame" :options="worklogTimeOptions" size="sm"></b-form-select>
-          </b-form-group>
-          <b-form-group class="col-md-2">
-            <b-button class="btn btn-primary btn-block" size="sm" >
-              Filter
-            </b-button>
           </b-form-group>
         </div>
         <b-list-group>
           <b-list-group-item
-            v-for="(t, index) in transactions"
+            v-for="(t, index) in filteredTrans"
             :key="index"
             class="text-left"
             :disabled="'requested' === t.status"
           >
             <div class="row">
               <div class="col-md-3">
-                <p style="color: grey; font-size: 14px;">{{ t.date }}</p>
+                <p style="color: grey; font-size: 14px;">{{ parseDate(new Date(t.timeIn)) }}</p>
               </div>
               <div class="col-md-3">
-                Volunteer
+                {{ t.type }}
               </div>
-              <div class="col-md-3">
-                In: {{ t.timeIn }} </br>
-                Out: {{ t.timeOut }}
+              <div class="col-md-4">
+                In: {{ parseTime(new Date(t.timeIn)) }} <br>
+                Out: {{ parseTime(new Date(t.timeOut)) }}
               </div>
-              <div class="col-md-3">
-                <p style="color: green; font-size: 14px;">+12</p><p style="color: grey; font-size: 14px;">/145</p>
+              <div class="col-md-2">
+                <span 
+                  style="font-size: 14px;" 
+                  :class="parseHours(new Date(t.timeChange)) > 0 ? 'earning' : 'purchase'"
+                >
+                  {{ parseHours(new Date(t.timeChange)) > 0 ? '+' : '-' }} {{Math.abs(parseHours(new Date(t.timeChange))) }}
+                </span>
+                <font size="2" color="grey">/{{t.currTotal}}</font>
               </div>
             </div>
           </b-list-group-item>
@@ -139,11 +139,8 @@
       </div>
       <div class="col-md-3">
         <h3>
-          Current total hours:
+          Current total hours: {{ this.totalHours }}
         </h3>
-        <h4>
-          Hours earned this week:
-        </h4>
       </div>
     </div>
   </div>
@@ -155,57 +152,20 @@ export default {
     return{
       worklogTypeOptions:[
         { value: null, text: 'All types' },
-        { value: 'Hours Earned', text: 'Hours Earned' },
-        { value: 'Purchases', text: 'Purchases' },
+        { value: 1, text: 'Hours Earned' },
+        { value: -1, text: 'Purchases' },
       ],
       worklogTimeOptions:[
         { value: null, text: 'All history' },
-        { value: 'Past week', text: 'Past week' },
-        { value: 'Past month', text: 'Past month' },
+        { value: 8, text: 'Past week' },
+        { value: 31, text: 'Past month' },
       ],
       worklogFilter:{
         type: null,
         timeFrame: null
       },
       currentUser: null,
-      transactions: null,
-      dummyTransactions:{
-        trans1:{
-          date: '5-1-19',
-          checkIn: 5,
-          checkOut: 10,
-          hoursEarned: 5,
-          status: 'requested'
-        },
-        trans2:{
-          date: '5-1-19',
-          checkIn: 3,
-          checkOut: 5,
-          hoursEarned: 2,
-          status: 'requested'
-        },
-        trans3:{
-          date: '5-1-19',
-          checkIn: 3,
-          checkOut: 7,
-          hoursEarned: 4,
-          status: 'approved'
-        },
-        trans4:{
-          date: '5-1-19',
-          checkIn: 1,
-          checkOut: 5,
-          hoursEarned: 4,
-          status: 'approved'
-        },
-        trans5:{
-          date: '5-1-19',
-          checkIn: 3,
-          checkOut: 8,
-          hoursEarned: 5,
-          status: 'approved'
-        }
-      },
+      transactions: [],
       today: {
         month: null,
         day: null,
@@ -219,7 +179,8 @@ export default {
         userId: this.$route.params.id,
         timeIn: null,
         timeOut: null,
-        hourChange: null,
+        type: null,
+        timeChange: null,
         activities: {
           class: null,
           bikeRide: null,
@@ -229,13 +190,41 @@ export default {
       },
       timeIn: null,
       timeDiff: null,
+      totalHours: 0
+    }
+  },
+  computed: {
+    filteredTrans() {
+      var filtered = this.transactions
+      if(this.worklogFilter.type){
+        console.log("filtering type")
+        filtered = filtered.filter(trans => trans.timeChange*this.worklogFilter.type > 0)
+      }
+      if(this.worklogFilter.timeFrame){
+        filtered.forEach(trans => {
+console.log(this.parseHours(new Date(Date.now() - trans.timeIn))/60)
+        })
+        
+        filtered = filtered.filter(trans => this.parseHours(new Date(Date.now() - trans.timeIn))/60 < this.worklogFilter.timeFrame)
+      }
+      filtered = filtered.sort(function(a,b){
+        return a.timeIn - b.timeIn
+      })
+      filtered.forEach(t => {
+        this.totalHours = this.parseHours(t.timeChange) + this.totalHours 
+        t.currTotal = this.totalHours
+      })
+      filtered = filtered.sort(function(a,b){
+        return b.timeIn - a.timeIn
+      })
+      return filtered
     }
   },
   methods: {
-    async fetchTransactions(){
-      var snapshot = await db.collection("transactions").where("userId", "==", this.$route.params.id).get()
-      this.transactions = snapshot.docs.map(doc => this.parseTransaction(doc))
-    },
+ //   async fetchTransactions(){
+  //    var snapshot = await db.collection("transactions").where("userId", "==", this.$route.params.id).get()
+ //     this.transactions = snapshot.docs.map(doc => this.parseTransaction(doc))
+ //   },
     parseTransaction(d){
       if(d === null){
         return ''
@@ -278,6 +267,13 @@ export default {
         return hours+':'+minutes+' '+ampm
       }
     },
+    parseHours(d){
+      if(d === null){
+        return ''
+      }else{
+        return Math.round(d / (1000))
+      }
+    },
     calcTimeDiff(x, y){
         var d = (y.getTime() - x.getTime())/1000
         var minutes = Math.round((d%3600)/60)
@@ -285,14 +281,27 @@ export default {
         return hours+" hrs "+ minutes +" mins"
     },
     checkIn(){
-      this.timeLog.timeIn = new Date()
+      this.timeLog.timeIn = Date.now()
+      this.timeLog.latest = true
+      this.timeLog.type = "volunteer"
+      this.timeLog.status = "requested"
       this.checkedIn = !this.checkedIn
+      db.collection('transactions').add(this.timeLog)
     },
     checkOut(){
-      this.timeLog.timeOut = new Date()
-      this.timeLog.hourChange = 5
-      db.collection("transactions").add(this.timeLog)
-      this.checkedIn = !this.checkedIn
+      db.collection('transactions').where("userId", "==", this.$route.params.id).where("latest", "==", true)
+      .get().then(snapshot => {
+        snapshot.forEach(doc => {
+          console.log(doc.id)
+          var timeIn = doc.data().timeIn
+          db.collection('transactions').doc(doc.id).update({
+            timeOut: Date.now(),
+            timeChange: Date.now() - timeIn,
+            latest: false
+          })
+        })
+        this.checkedIn = !this.checkedIn
+      })
     },
     timeLogComplete(){
       if((this.timeLog.hours.activity1 === null)||
@@ -312,11 +321,34 @@ export default {
   },
   mounted(){
     this.fetchDateTime()
-    this.fetchTransactions()
   },
   created(){
     this.fetchCurrentUser()
+    db.collection('transactions').where("userId", "==", this.$route.params.id).where("latest", "==", false).onSnapshot(res => {
+      const changes = res.docChanges() //the documents that have been changed in firestore
+      changes.forEach(change => {
+        if (change.type === 'added') {
+          var t = change.doc.data()
+          this.transactions.push({
+            timeIn: t.timeIn,
+            timeOut: t.timeOut,
+            timeChange: t.timeChange,
+            type: t.type,
+            id: change.doc.id
+          })
+        }
+      })
+    })
   }
 
 }
 </script>
+
+<style>
+.earning {
+  color: green;
+}
+.purchase {
+  color: red;
+}
+</style>

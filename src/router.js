@@ -5,6 +5,7 @@ import CheckIn from './views/CheckIn.vue'
 import AddUser from './views/AddUser.vue'
 import AllUsers from './views/AllUsers.vue'
 import UserDashboard from './views/UserDashboard.vue'
+import AdminPanel from './views/AdminPanel.vue'
 
 Vue.use(Router)
 
@@ -42,6 +43,11 @@ export default new Router({
       path: '/user/:id',
       name: 'userdashboard',
       component: UserDashboard
+    },
+    {
+      path: '/admin',
+      name: 'adminpanel',
+      component: AdminPanel
     }
   ]
 })
